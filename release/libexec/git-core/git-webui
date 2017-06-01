@@ -274,6 +274,10 @@ def get_setting_boolean(args, name, default=False):
     return read_config_boolean(name, default)
 
 
+def get_ip_address():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8",80))
+    return s.getsockname()[0]
 
 
 if __name__ == '__main__':
@@ -309,7 +313,13 @@ if __name__ == '__main__':
     WebUiRequestHandler.initialize(args.repo_root)
 
     args.port = get_setting_string(args, 'port', None)
-    port = int(args.port) if args.port is not None else 8000
+    randPort = -1
+    if args.port is not None:
+        randPort = int(args.port)
+    if randPort < 0:
+        randPort = os.getuid() % (49151-1024) + 1024 + datetime.datetime.now().second
+    port = randPort
+#    port = int(args.port) if args.port is not None else 8000
     host = get_setting_string(args, 'host', "")
     httpd = None
     while httpd is None:
@@ -323,7 +333,8 @@ if __name__ == '__main__':
                 sys.stderr.write("Port {} is already in use, trying another one\n".format(port))
                 port += 1
 
-    url = "http://{}:{}".format(host if host else "localhost", port)
+#    url = "http://{}:{}".format(host if host else "localhost", port)
+    url = "http://{}:{}".format(host if host else get_ip_address(), port)
     print("Serving at {}".format(url))
     nobrowser = get_setting_boolean(args, "nobrowser");
     if not nobrowser:
